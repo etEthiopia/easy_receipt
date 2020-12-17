@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1090189103942",
+    "project_id": "easyreceipt-ae09b",
+    "storage_bucket": "easyreceipt-ae09b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1090189103942:android:96ecfef8037894f6e48b47",
+        "android_client_info": {
+          "package_name": "com.example.easy_receipt"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1090189103942-cv69b2c0p887nut4p648vr9voh97jafo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.easy_receipt",
+            "certificate_hash": "4ed05033a4e709572b10f2e16363933507e2e807"
+          }
+        },
+        {
+          "client_id": "1090189103942-fajq0mufdsi3nvg8g8s5j22v7k9jt4hs.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCP2zZ66nVcVErdBv4a-d_RYxY5HoQ-blU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1090189103942-fajq0mufdsi3nvg8g8s5j22v7k9jt4hs.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
