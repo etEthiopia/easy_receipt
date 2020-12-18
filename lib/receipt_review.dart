@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
@@ -111,7 +111,16 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
 
   Widget _setImageView() {
     if (_imageFile != null) {
-      return Image.file(_imageFile, width: 500, height: 500);
+      return Column(
+        children: [
+          Image.file(_imageFile, width: 500, height: 500),
+          RaisedButton(
+              onPressed: () async {
+                uploadImage();
+              },
+              child: Text("Upload"))
+        ],
+      );
     } else {
       return Column(
         children: [
@@ -131,6 +140,31 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
         ],
       );
     }
+  }
+
+  void uploadImage() async {
+    String extsn = _imageFile.path.split('/').last.split('.').last;
+    String name = user.user.displayName +
+        '_' +
+        DateTime.now()
+            .toString()
+            .replaceAll('-', '_')
+            .replaceAll(' ', '_')
+            .replaceAll(':', '_')
+            .replaceAll('.', '_') +
+        '.' +
+        extsn;
+    final StorageReference storageRef =
+        FirebaseStorage.instance.ref().child(name);
+    final StorageUploadTask uploadTask = storageRef.putFile(
+      File(_imageFile.path),
+      StorageMetadata(
+        contentType: "image" + '/' + extsn,
+      ),
+    );
+    final StorageTaskSnapshot downloadUrl = (await uploadTask.onComplete);
+    final String url = (await downloadUrl.ref.getDownloadURL());
+    print('URL Is $url');
   }
 
   void signInWithGoogle() async {
