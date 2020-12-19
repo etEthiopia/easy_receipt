@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:easy_receipt/api/form_recognizer.dart';
+import 'package:easy_receipt/bill_detail.dart';
 import 'package:easy_receipt/models/aawsa.dart';
 import 'package:easy_receipt/theme/colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -14,6 +15,8 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
 
 class ReceiptPreviewScreen extends StatefulWidget {
+  static AAWSA selectedBill;
+
   @override
   _ReceiptPreviewScreen createState() => _ReceiptPreviewScreen();
 }
@@ -254,19 +257,29 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
                 itemCount: bills.length,
                 itemBuilder: (BuildContext ctxt, int index) {
                   return Container(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(bills[index].billMonth,
+                      child: InkWell(
+                        onTap: () {
+                          ReceiptPreviewScreen.selectedBill = bills[index];
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => BillDetail()),
+                          );
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(bills[index].billMonth,
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 17)),
+                            ),
+                            Text(bills[index].amount.toString() + " ETB",
                                 style: TextStyle(
-                                    color: Colors.white, fontSize: 17)),
-                          ),
-                          Text(bills[index].amount.toString() + " ETB",
-                              style: TextStyle(
-                                color: light,
-                              ))
-                        ],
+                                  color: light,
+                                ))
+                          ],
+                        ),
                       ),
                       margin: EdgeInsets.only(top: 13, left: 10, right: 10),
                       padding:
@@ -464,13 +477,13 @@ class SimpleLineChart extends StatelessWidget {
       List<AAWSA> bils) {
     List<LinearSales> data = [];
     for (AAWSA onebill in bils) {
-      data.add(LinearSales(
-          index: bils.indexOf(onebill) + 1, amount: onebill.amount));
+      data.add(
+          LinearSales(index: bils.indexOf(onebill), amount: onebill.amount));
     }
     return [
       new charts.Series<LinearSales, int>(
         id: 'Sales',
-        colorFn: (_, __) => charts.MaterialPalette.blue.shadeDefault,
+        colorFn: (_, __) => charts.MaterialPalette.pink.shadeDefault,
         domainFn: (LinearSales sales, _) => sales.index,
         measureFn: (LinearSales sales, _) => sales.amount,
         data: data,
