@@ -417,6 +417,16 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
     }
   }
 
+  Widget _logoSection() {
+    return Container(
+        margin: EdgeInsets.fromLTRB(0.0, 10.0, 0.0, 0.0),
+        alignment: Alignment.topCenter,
+        child: Image.asset(
+          "assets/playstore.png",
+          width: 100.0,
+        ));
+  }
+
   void signOut() async {
     await firebaseAuth.signOut().then((value) => {
           setState(() {
@@ -430,14 +440,15 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
       padding: const EdgeInsets.only(top: 50.0),
       child: Column(
         children: [
-          Text(
-            "Choose Easy Receipt, \n Choose Easy Life",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 25,
-            ),
-            textAlign: TextAlign.center,
-          ),
+          // Text(
+          //   "Choose Easy Receipt, \n Choose Easy Life",
+          //   style: TextStyle(
+          //     color: Colors.white,
+          //     fontSize: 25,
+          //   ),
+          //   textAlign: TextAlign.center,
+          // ),
+          _logoSection(),
           SizedBox(
             height: 10,
           ),
