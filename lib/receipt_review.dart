@@ -11,6 +11,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_signin_button/flutter_signin_button.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:charts_flutter/flutter.dart' as charts;
 
 class ReceiptPreviewScreen extends StatefulWidget {
   @override
@@ -27,6 +28,7 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
   DatabaseReference _dbref;
   bool loading = false;
   FirebaseApp app;
+  List<AAWSA> bills = [];
 
   void initFirebaseApp() async {
     app = await FirebaseApp.configure(
@@ -38,12 +40,47 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
       ),
     );
     _dbref = FirebaseDatabase(app: app).reference();
+    readyThePrevious();
+  }
+
+  void readyThePrevious() {
+    setState(() {
+      bills = [];
+    });
+    List<AAWSA> temps = [];
+    _dbref.once().then((DataSnapshot snapshot) {
+      Map<dynamic, dynamic> values = snapshot.value;
+
+      values.forEach((key, values) {
+        temps.add(AAWSA.fromDB(
+          url: values['url'] ?? '-',
+          title: values['title'] ?? '-',
+          bankBranch: values['bank_branch'] ?? '-',
+          paymentDate: values['payment_date'] ?? '-',
+          transRef: values['tran_ref'] ?? '-',
+          accountNo: values['account_no'] ?? 0,
+          customerKey: values['customer_key'] ?? '-',
+          accountName: values['account_name'] ?? '-',
+          billMonth: values['bill_month'] ?? '-',
+          currentRead: values['current_read'] ?? 0,
+          previousRead: values['previous_read'] ?? 0,
+          consumption: values['consumption'] ?? 0,
+          amount: values['amount'] ?? 0,
+          billerBranch: values['biller_branch'] ?? '-',
+        ));
+      });
+      setState(() {
+        bills = temps;
+      });
+      temps = [];
+    });
   }
 
   @override
   void initState() {
     super.initState();
     initFirebaseApp();
+    //readyThePrevious();
   }
 
   @override
@@ -205,6 +242,48 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
                 ),
               ),
       );
+    } else if (bills.length > 0) {
+      return Column(children: [
+        Container(
+          height: 200,
+          child: SimpleLineChart.withSampleData(bills),
+        ),
+        Container(
+            height: 300,
+            child: ListView.builder(
+                itemCount: bills.length,
+                itemBuilder: (BuildContext ctxt, int index) {
+                  return Container(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(bills[index].billMonth,
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 17)),
+                          ),
+                          Text(bills[index].amount.toString() + " ETB",
+                              style: TextStyle(
+                                color: light,
+                              ))
+                        ],
+                      ),
+                      margin: EdgeInsets.only(top: 13, left: 10, right: 10),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 25, vertical: 20),
+                      decoration: BoxDecoration(
+                          boxShadow: [
+                            BoxShadow(
+                              color: dbackground3,
+                              offset: const Offset(1.0, 1.0),
+                              blurRadius: 5.0,
+                              spreadRadius: 2.0,
+                            ),
+                          ],
+                          color: dbackground2,
+                          borderRadius: BorderRadius.circular(10)));
+                }))
+      ]);
     } else {
       return Column(
         children: [
@@ -250,21 +329,19 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
           contentType: "image" + '/' + extsn,
         ),
       );
-      // final StorageTaskSnapshot downloadUrl = (await uploadTask.onComplete);
-      // final String url = (await downloadUrl.ref.getDownloadURL());
-      String url =
-          "https://firebasestorage.googleapis.com/v0/b/easyreceipt-ae09b.appspot.com/o/20201213_072511.jpg?alt=media&token=72916cd6-9be8-4aae-b435-fef0187fe628";
+      final StorageTaskSnapshot downloadUrl = (await uploadTask.onComplete);
+      final String url = (await downloadUrl.ref.getDownloadURL());
       print('URL Is $url');
       analyzeAndSave(url);
-      setState(() {
-        loading = false;
-      });
     } catch (e) {
       print("ERROR: $e");
       setState(() {
         loading = false;
       });
     }
+    setState(() {
+      _imageFile = null;
+    });
   }
 
   void signInWithGoogle() async {
@@ -290,14 +367,6 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
     try {
       AAWSA bill = await FormRecognizer.analyze(url: url);
       print("Bill ${bill.billMonth} processed Successfully");
-      Fluttertoast.showToast(
-          msg: "Bill ${bill.billMonth} processed Successfully",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.CENTER,
-          timeInSecForIosWeb: 1,
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-          fontSize: 20.0);
 
       Map<String, dynamic> jsonbill = bill.toMap();
       try {
@@ -309,7 +378,11 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
             timeInSecForIosWeb: 1,
             backgroundColor: dark,
             textColor: Colors.white,
-            fontSize: 20.0);
+            fontSize: 18.0);
+        readyThePrevious();
+        setState(() {
+          loading = false;
+        });
       } catch (e) {
         Fluttertoast.showToast(
             msg: e,
@@ -319,9 +392,15 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
             backgroundColor: Colors.red,
             textColor: Colors.white,
             fontSize: 16.0);
+        setState(() {
+          loading = false;
+        });
       }
     } catch (e) {
       print("ERROR PROCESSING $e");
+      setState(() {
+        loading = false;
+      });
     }
   }
 
@@ -359,4 +438,52 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
       ),
     );
   }
+}
+
+class SimpleLineChart extends StatelessWidget {
+  final List<charts.Series> seriesList;
+  final bool animate;
+
+  SimpleLineChart(this.seriesList, {this.animate});
+
+  @override
+  Widget build(BuildContext context) {
+    return new charts.LineChart(seriesList, animate: animate);
+  }
+
+  factory SimpleLineChart.withSampleData(List<AAWSA> bils) {
+    return new SimpleLineChart(
+      _createSampleData(bils),
+      // Disable animations for image tests.
+      animate: false,
+    );
+  }
+
+  /// Create one series with sample hard coded data.
+  static List<charts.Series<LinearSales, int>> _createSampleData(
+      List<AAWSA> bils) {
+    List<LinearSales> data = [];
+    for (AAWSA onebill in bils) {
+      data.add(LinearSales(
+          index: bils.indexOf(onebill) + 1, amount: onebill.amount));
+    }
+    return [
+      new charts.Series<LinearSales, int>(
+        id: 'Sales',
+        colorFn: (_, __) => charts.MaterialPalette.blue.shadeDefault,
+        domainFn: (LinearSales sales, _) => sales.index,
+        measureFn: (LinearSales sales, _) => sales.amount,
+        data: data,
+        seriesColor: charts.ColorUtil.fromDartColor(Colors.yellow),
+      )
+    ];
+  }
+}
+
+/// Sample linear data type.
+class LinearSales {
+  final int index;
+  final double amount;
+
+  LinearSales({this.index, this.amount});
 }

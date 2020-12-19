@@ -21,7 +21,7 @@ class FormRecognizer {
       if (res.body != null) {
         AAWSA bill = AAWSA.fromJson(json.decode(res.body));
         bill.url = url;
-        print("bill");
+
         return bill;
       } else {
         throw Exception('Null');

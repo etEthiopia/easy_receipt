@@ -1,7 +1,6 @@
 class AAWSA {
   String url;
   String title;
-  String address;
   String bankBranch;
   String paymentDate;
   String transRef;
@@ -16,13 +15,29 @@ class AAWSA {
   String billerBranch;
   AAWSA();
 
+  AAWSA.fromDB(
+      {this.url,
+      this.title,
+      this.bankBranch,
+      this.paymentDate,
+      this.transRef,
+      this.accountNo,
+      this.customerKey,
+      this.accountName,
+      this.billMonth,
+      this.currentRead,
+      this.previousRead,
+      this.consumption,
+      this.amount,
+      this.billerBranch});
+
   factory AAWSA.fromJson(Map<String, dynamic> json) {
     AAWSA bill = AAWSA();
     if (json["title"] != null) {
       bill.title = json["title"]["text"] ?? "---";
     }
-    if (json["biller_branch"] != null) {
-      bill.bankBranch = json["biller_branch"]["text"] ?? "---";
+    if (json["bank_branch"] != null) {
+      bill.bankBranch = json["bank_branch"]["text"] ?? "---";
     }
     if (json["payment_date"] != null) {
       bill.paymentDate = json["payment_date"]["text"] ?? "---";
@@ -54,7 +69,7 @@ class AAWSA {
     if (json["consumption"] != null) {
       bill.consumption = json["consumption"]["valueInteger"] ?? 0;
     }
-    if (json["biller_branch"] != null) {
+    if (json['biller_branch'] != null) {
       bill.billerBranch = json["biller_branch"]["text"] ?? "---";
     }
     return bill;
@@ -63,8 +78,8 @@ class AAWSA {
   Map<String, dynamic> toMap() {
     return {
       'title': title,
-      'address': address,
-      'biller_branch': bankBranch,
+      'biller_branch': billerBranch,
+      'bank_branch': bankBranch,
       'payment_date': paymentDate,
       'tran_ref': transRef,
       'account_no': accountNo,
@@ -75,7 +90,6 @@ class AAWSA {
       'previous_read': previousRead,
       'amount': amount,
       'consumption': consumption,
-      'biller_branch': billerBranch,
     };
   }
 }
