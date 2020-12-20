@@ -79,6 +79,7 @@ class AAWSA {
 
   Map<String, dynamic> toMap() {
     return {
+      'url': url,
       'user': user,
       'title': title,
       'biller_branch': billerBranch,

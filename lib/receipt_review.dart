@@ -30,6 +30,7 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
   AuthResult user;
   DatabaseReference _dbref;
   bool loading = false;
+  String loadingText = "";
   FirebaseApp app;
   List<AAWSA> bills = [];
 
@@ -51,35 +52,60 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
     });
     List<AAWSA> temps = [];
     if (user != null) {
+      setState(() {
+        loading = true;
+        loadingText = "Loading";
+      });
       _dbref.once().then((DataSnapshot snapshot) {
         Map<dynamic, dynamic> values = snapshot.value;
-        if (values.length > 0) {
-          values.forEach((key, values) {
-            if (values['user'] == user.user.uid) {
-              temps.add(AAWSA.fromDB(
-                user: values['user'] ?? '-',
-                url: values['url'] ?? '-',
-                title: values['title'] ?? '-',
-                bankBranch: values['bank_branch'] ?? '-',
-                paymentDate: values['payment_date'] ?? '-',
-                transRef: values['tran_ref'] ?? '-',
-                accountNo: values['account_no'] ?? 0,
-                customerKey: values['customer_key'] ?? '-',
-                accountName: values['account_name'] ?? '-',
-                billMonth: values['bill_month'] ?? '-',
-                currentRead: values['current_read'] ?? 0,
-                previousRead: values['previous_read'] ?? 0,
-                consumption: values['consumption'] ?? 0,
-                amount: values['amount'] ?? 0,
-                billerBranch: values['biller_branch'] ?? '-',
-              ));
-            }
-          });
-          setState(() {
-            bills = temps;
-          });
-          temps = [];
+        if (values != null) {
+          if (values.length > 0) {
+            values.forEach((key, values) {
+              if (values['user'] == user.user.uid) {
+                temps.add(AAWSA.fromDB(
+                  user: values['user'] ?? '-',
+                  url: values['url'] ?? '-',
+                  title: values['title'] ?? '-',
+                  bankBranch: values['bank_branch'] ?? '-',
+                  paymentDate: values['payment_date'] ?? '-',
+                  transRef: values['tran_ref'] ?? '-',
+                  accountNo: values['account_no'] ?? 0,
+                  customerKey: values['customer_key'] ?? '-',
+                  accountName: values['account_name'] ?? '-',
+                  billMonth: values['bill_month'] ?? '-',
+                  currentRead: values['current_read'] ?? 0,
+                  previousRead: values['previous_read'] ?? 0,
+                  consumption: values['consumption'] ?? 0,
+                  amount: values['amount'] ?? 0,
+                  billerBranch: values['biller_branch'] ?? '-',
+                ));
+              }
+            });
+            temps = temps.reversed.toList();
+            setState(() {
+              bills = temps;
+            });
+            temps = [];
+          }
         }
+        setState(() {
+          loading = false;
+          loadingText = "";
+        });
+      }).catchError((e) {
+        print("Error: " + e.toString());
+        setState(() {
+          loading = false;
+          loadingText = "";
+        });
+        Fluttertoast.showToast(
+            msg: "Couldn't Load Data",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.CENTER,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+            fontSize: 15.0);
       });
     }
   }
@@ -88,7 +114,6 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
   void initState() {
     super.initState();
     initFirebaseApp();
-    //readyThePrevious();
   }
 
   @override
@@ -123,7 +148,7 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
                 child: _setImageView()),
           ),
         ),
-        floatingActionButton: user != null && _imageFile == null
+        floatingActionButton: user != null && _imageFile == null && !loading
             ? Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -243,14 +268,9 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
                 padding: EdgeInsets.symmetric(
                   vertical: MediaQuery.of(context).size.height * 0.35,
                 ),
-                child: Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(primary),
-                  ),
-                ),
-              ),
+                child: _loadingSection()),
       );
-    } else if (bills.length > 0) {
+    } else if (bills.length > 0 && !loading) {
       return Column(children: [
         Container(
           height: 200,
@@ -302,22 +322,30 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
                           borderRadius: BorderRadius.circular(10)));
                 }))
       ]);
+    } else if (loading) {
+      return Padding(
+        padding: const EdgeInsets.only(left: 25.0, right: 25.0, bottom: 5.0),
+        child: Container(
+            padding: EdgeInsets.symmetric(
+              vertical: MediaQuery.of(context).size.height * 0.35,
+            ),
+            child: _loadingSection()),
+      );
     } else {
       return Column(
+        mainAxisSize: MainAxisSize.max,
         children: [
-          Text("Please select an image"),
-          user == null
-              ? FlatButton(
-                  onPressed: () async {
-                    signInWithGoogle();
-                  },
-                  child: Text("Sign In With Google"))
-              : FlatButton(
-                  onPressed: () async {
-                    signOut();
-                  },
-                  child: Text("Sign Out")),
-          Text((user != null) ? user.user.displayName : "Not logged in"),
+          _logoSection(),
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.25,
+          ),
+          Text(
+            "By Dagmawi Negussu",
+            style: TextStyle(
+              color: primary,
+            ),
+            textAlign: TextAlign.center,
+          ),
         ],
       );
     }
@@ -327,6 +355,7 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
     try {
       setState(() {
         loading = true;
+        loadingText = "Uploading Receipt";
       });
       String extsn = _imageFile.path.split('/').last.split('.').last;
       String name = user.user.displayName +
@@ -348,12 +377,18 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
         ),
       );
       final StorageTaskSnapshot downloadUrl = (await uploadTask.onComplete);
-      final String url = (await downloadUrl.ref.getDownloadURL());
+      final String url = await downloadUrl.ref.getDownloadURL();
       print('URL Is $url');
+      setState(() {
+        _imageFile = null;
+        loading = true;
+        loadingText = "Analyzing Receipt";
+      });
       analyzeAndSave(url);
     } catch (e) {
       print("ERROR: $e");
       setState(() {
+        loadingText = "";
         loading = false;
       });
     }
@@ -387,22 +422,15 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
       AAWSA bill = await FormRecognizer.analyze(url: url);
       print("Bill ${bill.billMonth} processed Successfully");
       bill.user = this.user.user.uid;
+      bill.url = url;
       Map<String, dynamic> jsonbill = bill.toMap();
-      try {
-        _dbref.push().set(jsonbill);
-        Fluttertoast.showToast(
-            msg: "Bill ${bill.billMonth} saved Successfully",
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.CENTER,
-            timeInSecForIosWeb: 1,
-            backgroundColor: dark,
-            textColor: Colors.white,
-            fontSize: 18.0);
+      setState(() {
+        loading = true;
+        loadingText = "Saving the Data";
+      });
+      _dbref.push().set(jsonbill).then((value) {
         readyThePrevious();
-        setState(() {
-          loading = false;
-        });
-      } catch (e) {
+      }).catchError((e) {
         Fluttertoast.showToast(
             msg: e,
             toastLength: Toast.LENGTH_SHORT,
@@ -410,17 +438,41 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
             timeInSecForIosWeb: 1,
             backgroundColor: Colors.red,
             textColor: Colors.white,
-            fontSize: 16.0);
+            fontSize: 15.0);
         setState(() {
+          loadingText = "";
           loading = false;
         });
-      }
+      });
     } catch (e) {
       print("ERROR PROCESSING $e");
       setState(() {
+        loadingText = "";
         loading = false;
       });
     }
+  }
+
+  Widget _loadingSection() {
+    return Center(
+      child: Column(
+        children: [
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(primary),
+          ),
+          SizedBox(
+            height: 20,
+          ),
+          Text(
+            loadingText,
+            style: TextStyle(
+              color: primary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _logoSection() {
@@ -461,7 +513,7 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
         Text(
           "By Dagmawi Negussu",
           style: TextStyle(
-            color: Colors.white,
+            color: primary,
           ),
           textAlign: TextAlign.center,
         ),
