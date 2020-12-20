@@ -43,7 +43,6 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
       ),
     );
     _dbref = FirebaseDatabase(app: app).reference();
-    readyThePrevious();
   }
 
   void readyThePrevious() {
@@ -51,32 +50,38 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
       bills = [];
     });
     List<AAWSA> temps = [];
-    _dbref.once().then((DataSnapshot snapshot) {
-      Map<dynamic, dynamic> values = snapshot.value;
-
-      values.forEach((key, values) {
-        temps.add(AAWSA.fromDB(
-          url: values['url'] ?? '-',
-          title: values['title'] ?? '-',
-          bankBranch: values['bank_branch'] ?? '-',
-          paymentDate: values['payment_date'] ?? '-',
-          transRef: values['tran_ref'] ?? '-',
-          accountNo: values['account_no'] ?? 0,
-          customerKey: values['customer_key'] ?? '-',
-          accountName: values['account_name'] ?? '-',
-          billMonth: values['bill_month'] ?? '-',
-          currentRead: values['current_read'] ?? 0,
-          previousRead: values['previous_read'] ?? 0,
-          consumption: values['consumption'] ?? 0,
-          amount: values['amount'] ?? 0,
-          billerBranch: values['biller_branch'] ?? '-',
-        ));
+    if (user != null) {
+      _dbref.once().then((DataSnapshot snapshot) {
+        Map<dynamic, dynamic> values = snapshot.value;
+        if (values.length > 0) {
+          values.forEach((key, values) {
+            if (values['user'] == user.user.uid) {
+              temps.add(AAWSA.fromDB(
+                user: values['user'] ?? '-',
+                url: values['url'] ?? '-',
+                title: values['title'] ?? '-',
+                bankBranch: values['bank_branch'] ?? '-',
+                paymentDate: values['payment_date'] ?? '-',
+                transRef: values['tran_ref'] ?? '-',
+                accountNo: values['account_no'] ?? 0,
+                customerKey: values['customer_key'] ?? '-',
+                accountName: values['account_name'] ?? '-',
+                billMonth: values['bill_month'] ?? '-',
+                currentRead: values['current_read'] ?? 0,
+                previousRead: values['previous_read'] ?? 0,
+                consumption: values['consumption'] ?? 0,
+                amount: values['amount'] ?? 0,
+                billerBranch: values['biller_branch'] ?? '-',
+              ));
+            }
+          });
+          setState(() {
+            bills = temps;
+          });
+          temps = [];
+        }
       });
-      setState(() {
-        bills = temps;
-      });
-      temps = [];
-    });
+    }
   }
 
   @override
@@ -374,13 +379,14 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
         .then((userCredential) => {
               setState(() => {user = userCredential})
             });
+    readyThePrevious();
   }
 
   void analyzeAndSave(String url) async {
     try {
       AAWSA bill = await FormRecognizer.analyze(url: url);
       print("Bill ${bill.billMonth} processed Successfully");
-
+      bill.user = this.user.user.uid;
       Map<String, dynamic> jsonbill = bill.toMap();
       try {
         _dbref.push().set(jsonbill);
@@ -436,30 +442,30 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
   }
 
   Widget anonymousSection() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 50.0),
-      child: Column(
-        children: [
-          // Text(
-          //   "Choose Easy Receipt, \n Choose Easy Life",
-          //   style: TextStyle(
-          //     color: Colors.white,
-          //     fontSize: 25,
-          //   ),
-          //   textAlign: TextAlign.center,
-          // ),
-          _logoSection(),
-          SizedBox(
-            height: 10,
+    return Column(
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        _logoSection(),
+        SizedBox(
+          height: 20,
+        ),
+        SignInButton(
+          Buttons.Google,
+          onPressed: () async {
+            signInWithGoogle();
+          },
+        ),
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.15,
+        ),
+        Text(
+          "By Dagmawi Negussu",
+          style: TextStyle(
+            color: Colors.white,
           ),
-          SignInButton(
-            Buttons.Google,
-            onPressed: () async {
-              signInWithGoogle();
-            },
-          )
-        ],
-      ),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }

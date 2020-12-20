@@ -1,4 +1,5 @@
 class AAWSA {
+  String user;
   String url;
   String title;
   String bankBranch;
@@ -16,7 +17,8 @@ class AAWSA {
   AAWSA();
 
   AAWSA.fromDB(
-      {this.url,
+      {this.user,
+      this.url,
       this.title,
       this.bankBranch,
       this.paymentDate,
@@ -77,6 +79,7 @@ class AAWSA {
 
   Map<String, dynamic> toMap() {
     return {
+      'user': user,
       'title': title,
       'biller_branch': billerBranch,
       'bank_branch': bankBranch,
