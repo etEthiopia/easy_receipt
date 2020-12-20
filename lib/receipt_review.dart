@@ -398,23 +398,28 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
   }
 
   void signInWithGoogle() async {
-    final GoogleSignInAccount googleUser = await GoogleSignIn().signIn();
-    final GoogleSignInAuthentication googleAuth =
-        await googleUser.authentication;
-    //Create Google Auth credentials to pass to Firebase
-    final AuthCredential googleAuthCredential =
-        GoogleAuthProvider.getCredential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
+    try {
+      final GoogleSignInAccount googleUser = await GoogleSignIn().signIn();
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      //Create Google Auth credentials to pass to Firebase
+      final AuthCredential googleAuthCredential =
+          GoogleAuthProvider.getCredential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
 
-    //Authenticate against Firebase with Google credentials
-    await firebaseAuth
-        .signInWithCredential(googleAuthCredential)
-        .then((userCredential) => {
-              setState(() => {user = userCredential})
-            });
-    readyThePrevious();
+      //Authenticate against Firebase with Google credentials
+
+      await firebaseAuth
+          .signInWithCredential(googleAuthCredential)
+          .then((userCredential) => {
+                setState(() => {user = userCredential})
+              });
+      readyThePrevious();
+    } catch (e) {
+      print("sign in error");
+    }
   }
 
   void analyzeAndSave(String url) async {
@@ -486,11 +491,30 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
   }
 
   void signOut() async {
-    await firebaseAuth.signOut().then((value) => {
-          setState(() {
-            user = null;
-          })
-        });
+    await firebaseAuth
+        .signOut()
+        .then((value) => {
+              GoogleSignIn()
+                  .signOut()
+                  .then((value) => {
+                        setState(() {
+                          user = null;
+                        })
+                      })
+                  .catchError((e) => {
+                        setState(() {
+                          user = null;
+                        })
+                      })
+            })
+        .catchError((e) => {
+              setState(() {
+                user = null;
+              })
+            });
+    setState(() {
+      user = null;
+    });
   }
 
   Widget anonymousSection() {
