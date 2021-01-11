@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:easy_receipt/api/form_recognizer.dart';
 import 'package:easy_receipt/bill_detail.dart';
 import 'package:easy_receipt/models/aawsa.dart';
+import 'package:easy_receipt/phone_auth.dart';
 import 'package:easy_receipt/theme/colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -530,6 +531,22 @@ class _ReceiptPreviewScreen extends State<ReceiptPreviewScreen> {
           onPressed: () async {
             signInWithGoogle();
           },
+        ),
+        SignInButton(
+          Buttons.Pinterest,
+          onPressed: () async {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => PhoneAuth()),
+            ).then((value) {
+              if (value != null) {
+                setState(() {
+                  user = value;
+                });
+              }
+            });
+          },
+          text: "Sign in with Phone",
         ),
         SizedBox(
           height: MediaQuery.of(context).size.height * 0.15,
